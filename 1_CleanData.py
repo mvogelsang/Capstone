@@ -7,7 +7,7 @@ def getColsAccumulateAndClean(filenames, columns, destination):
     for dfile in filenames:
         tempnames.append(dfile+".temp.csv")
         tempfile = open(dfile+".temp.csv", "w")
-        command = ["csvcut", "-x", "-c"] + [",".join(columns)] + [dfile]
+        command = ["csvcut","-x", "-c"] + [",".join(columns)] + [dfile]
         print "cutting... " + " ".join(command)
         proc = subprocess.call(command, stdout=tempfile )
         tempfile.close()
@@ -31,24 +31,109 @@ def getColsAccumulateAndClean(filenames, columns, destination):
     # remove the old destination, and just keep the csvclean one
     os.remove(destination)
 
+# replace invalid bytes with ' '
+# ALL SPACES ARE THEN REMOVED FROM THE COLUMN NAMES
+def fixFile(filename):
+    with open(filename, "rb") as f:
+        # find bad bytes
+        byte = f.read(1)
+        index = 0
+        indexlist = []
+        while byte != "":
+            if byte > '~':
+                indexlist.append(index)
+            byte = f.read(1)
+            index += 1
+
+    # replace the bad bytes
+    fh = open(filename, "r+b")
+    for i in indexlist:
+        fh.seek(i)
+        fh.write(' ')
+    fh.close()
+
+    # if malformed bytes SOMEHOW HAPPEN TO BE IN THE HEADER OF THE LAST FILE YOU PROCESS
+    # go ahead and remove any spaces from the column names
+    f = open(filename, "r+")
+    line1 = f.readline()
+    line2 = line1.replace(" ", "")
+    f.close()
+    os.rename(filename, filename+".temp")
+    f = open(filename+".temp", "r+")
+    dest = open(filename, "w+")
+    for l in f:
+        if l != line1:
+            dest.write(l)
+        else:
+            dest.write(line2)
+    f.close()
+    dest.close()
+    os.remove(filename+".temp")
+
+
+
+    if len(indexlist) > 0:
+        print "found malformed bytes. These bytes will be replaced by '!' in the data"
+
+def fixFileArr(fileArr):
+    for filename in fileArr:
+        fixFile(filename)
+
+def addInspectionHeader(filename):
+    headerString = "c1,inspection_id,establishment_id,c4,c5,c6,c7,c8,c9,c10,c11,c12,score,c14,c15,c16,c17,c18,c19,c20\n"
+    source = open(filename, 'r')
+    dest = open("./raw_data/adjustedInspectionData.csv", "w+")
+    dest.write(headerString)
+    for line in source:
+        dest.write(line)
+    source.close()
+    dest.close()
+
 def main():
     # do initial preparation of the 311 data
     fileList311 = ["./raw_data/citizen311data_1.csv", "./raw_data/citizen311data_2.csv", "./raw_data/citizen311data_3.csv", "./raw_data/citizen311data_4.csv", "./raw_data/citizen311data_5.csv", "./raw_data/citizen311data_6.csv", "./raw_data/citizen311data_7.csv"]
+    fixFileArr(fileList311)
     cols = ["service_request_id", "description", "service_name", "longitude", "latitude", "requested_datetime"]
     dest = "./clean_data/Citizen311data_7yrs.csv"
     getColsAccumulateAndClean(fileList311, cols, dest)
 
     # do initial prep of establishment table
     fileListHealthEst = ["./raw_data/Health_Establishments.csv"]
+    fixFileArr(fileListHealthEst)
     cols = ["EstablishmentID", "RCodeDesc", "EstType", "PremiseName", "opening_date", "latitude", "longitude"]
     dest = "./clean_data/Establishments.csv"
     getColsAccumulateAndClean(fileListHealthEst, cols, dest)
 
     # do initial prep of the Inspections Violations table
     fileListHealthInspViolations = ["./raw_data/Health_InspViolations.csv"]
+    fixFileArr(fileListHealthInspViolations)
     cols = ["ODATAID","inspection_id","weight","critical_yn"]
     dest = "./clean_data/InspectionViolations.csv"
     getColsAccumulateAndClean(fileListHealthInspViolations, cols, dest)
+
+    #do initial prep for yelp Businesses table
+    fileListBusinesses = ["./raw_data/Businesses.csv"]
+    fixFileArr(fileListBusinesses)
+    cols = ["business_id","name","latitude","longitude"]
+    dest = "./clean_data/Businesses.csv"
+    getColsAccumulateAndClean(fileListBusinesses, cols, dest)
+
+    #do initial prep for inspection information
+    addInspectionHeader("./raw_data/Health_Inspections.csv")
+    fileListInspections = ["./raw_data/adjustedInspectionData.csv"]
+    fixFileArr(fileListInspections)
+    cols = ["inspection_id","establishment_id","score"]
+    dest = "./clean_data/Health_Inspections.csv"
+    getColsAccumulateAndClean(fileListInspections, cols, dest)
+
+    #do initial prep for yelp address information
+    fileListAddresses = ["./raw_data/Jefferson_County_KY_Address_Points.csv"]
+    fixFileArr(fileListAddresses)
+    cols = ["FID","HOUSENO", "DIR", "STRNAME", "ZIPCODE", "X","Y"]
+    dest = "./clean_data/Address_Points.csv"
+    getColsAccumulateAndClean(fileListAddresses, cols, dest)
+
+
 
 if __name__ == "__main__":
     main()
