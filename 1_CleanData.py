@@ -111,13 +111,6 @@ def main():
     dest = "./clean_data/InspectionViolations.csv"
     getColsAccumulateAndClean(fileListHealthInspViolations, cols, dest)
 
-    #do initial prep for yelp Businesses table
-    fileListBusinesses = ["./raw_data/Businesses.csv"]
-    fixFileArr(fileListBusinesses)
-    cols = ["business_id","name","latitude","longitude"]
-    dest = "./clean_data/Businesses.csv"
-    getColsAccumulateAndClean(fileListBusinesses, cols, dest)
-
     #do initial prep for inspection information
     addInspectionHeader("./raw_data/Health_Inspections.csv")
     fileListInspections = ["./raw_data/adjustedInspectionData.csv"]

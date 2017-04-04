@@ -2,3 +2,5 @@ clean_data
 raw_data
 LouData.db
 dbdump.db
+TableInitializationScript.sql
+dbdump.bak
