@@ -126,13 +126,19 @@ def main():
     dest = "./clean_data/Health_Inspections.csv"
     getColsAccumulateAndClean(fileListInspections, cols, dest)
 
-    #do initial prep for yelp address information
+    #do initial prep for address information
     fileListAddresses = ["./raw_data/Jefferson_County_KY_Address_Points.csv"]
     fixFileArr(fileListAddresses)
-    cols = ["FID","HOUSENO", "DIR", "STRNAME", "ZIPCODE", "X","Y"]
+    cols = ["FID","HOUSENO", "DIR", "TYPE" "STRNAME", "ZIPCODE", "X","Y"]
     dest = "./clean_data/Address_Points.csv"
     getColsAccumulateAndClean(fileListAddresses, cols, dest)
 
+    #do initial prep for crime information
+    fileListCrime = ["./raw_data/Crime_Data_1.csv", "./raw_data/Crime_Data_2.csv", "./raw_data/Crime_Data_3.csv"]
+    fixFileArr(fileListCrime)
+    cols = ["INCIDENT_NUMBER", "DATE_OCCURED", "BLOCK_ADDRESS", "CITY", "ZIP_CODE"]
+    dest = "./clean_data/Crime.csv"
+    getColsAccumulateAndClean(fileListCrime, cols, dest)
 
 
 if __name__ == "__main__":
