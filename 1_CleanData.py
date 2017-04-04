@@ -80,7 +80,7 @@ def fixFileArr(fileArr):
         fixFile(filename)
 
 def addInspectionHeader(filename):
-    headerString = "c1,inspection_id,establishment_id,c4,c5,c6,c7,c8,c9,c10,c11,c12,score,c14,c15,c16,c17,c18,c19,c20\n"
+    headerString = "c1,inspection_id,establishment_id,c4,c5,c6,inspection_date,c8,c9,c10,c11,c12,score,c14,c15,c16,c17,c18,c19,c20\n"
     source = open(filename, 'r')
     dest = open("./raw_data/adjustedInspectionData.csv", "w+")
     dest.write(headerString)
@@ -122,7 +122,7 @@ def main():
     addInspectionHeader("./raw_data/Health_Inspections.csv")
     fileListInspections = ["./raw_data/adjustedInspectionData.csv"]
     fixFileArr(fileListInspections)
-    cols = ["inspection_id","establishment_id","score"]
+    cols = ["inspection_id","establishment_id", "inspection_date", "score"]
     dest = "./clean_data/Health_Inspections.csv"
     getColsAccumulateAndClean(fileListInspections, cols, dest)
 
