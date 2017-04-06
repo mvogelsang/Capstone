@@ -122,7 +122,7 @@ def main():
     #do initial prep for address information
     fileListAddresses = ["./raw_data/Jefferson_County_KY_Address_Points.csv"]
     fixFileArr(fileListAddresses)
-    cols = ["FID","HOUSENO", "DIR", "TYPE" "STRNAME", "ZIPCODE", "X","Y"]
+    cols = ["FID","HOUSENO", "DIR", "STRNAME", "TYPE", "ZIPCODE", "X","Y"]
     dest = "./clean_data/Address_Points.csv"
     getColsAccumulateAndClean(fileListAddresses, cols, dest)
 
