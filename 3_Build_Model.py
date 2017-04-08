@@ -45,7 +45,7 @@ def main():
     for i in x:
         print i
 
-
+    dbConn.close()
 
 
 if __name__ == "__main__":
