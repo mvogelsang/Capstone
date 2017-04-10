@@ -98,7 +98,7 @@ def main():
     # do initial prep of establishment table
     fileListHealthEst = ["./raw_data/Health_Establishments.csv"]
     fixFileArr(fileListHealthEst)
-    cols = ["EstablishmentID", "RCodeDesc", "EstType", "PremiseName", "opening_date", "latitude", "longitude"]
+    cols = ["EstablishmentID", "RCodeDesc", "EstType", "PremiseName", "PremiseStreet", "opening_date", "latitude", "longitude"]
     dest = "./clean_data/Establishments.csv"
     getColsAccumulateAndClean(fileListHealthEst, cols, dest)
 

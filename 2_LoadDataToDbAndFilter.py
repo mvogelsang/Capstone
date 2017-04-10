@@ -26,13 +26,14 @@ def main():
         print "loading - " + df
         loadData(df)
 
-    print 'data loaded, beginning preprocessing'
-
     # give tables more usable names for queries
+    print 'data loaded, beginning preprocessing'
     renameTables([('Establishments_out', 'Establishments'), ('InspectionViolations_out', 'Violations'),('Health_Inspections_out', 'Inspections'),('Address_Points_out', 'Addresses'),('Citizen311data_7yrs_out', 'ThreeOneOne'),('Crime_out', 'Crime')])
     print "finishing"
     dbConn.commit()
     dbConn.close()
+
+    
 
 if __name__ == "__main__":
     main()

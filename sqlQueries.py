@@ -1,25 +1,8 @@
-# def clean311():
-#     print 'processing 311 data'
-#     conn = dbConnect()
-#     c = conn.cursor()
-#
-#     # get rid of inappropriate blanks and nulled rows
-#     c.execute("delete from Citizen311data_7yrs_out where service_request_id is null or description is null or longitude is null or latitude is null or requested_datetime is null")
-#     c.execute("delete from Citizen311data_7yrs_out where service_request_id is '' or description is '' or longitude is '' or latitude is '' or requested_datetime is '' or longitude is 0 or latitude is 0")
-#
-#     # get rid of complaints that are not pertinent (must be health/sanitation related)
-#     keywords = ['GARBAGE','TRASH','JUNK', 'CART', 'RATS', 'FOOD']
-#     for word in keywords:
-#         queryFill = '%'+word+'%'
-#         c.execute("delete from Citizen311data_7yrs_out where description not like(?) and service_name not like(?)", (queryFill, queryFill))
-#
-#     # get rid of data older than ~10 yrs
-#     now = datetime.date.today()
-#     timeEdge = now - datetime.timedelta(days=10*365.25)
-#     c.execute("delete from Citizen311data_7yrs_out where requested_datetime < ?", (timeEdge,))
-
 # all queries should end in '_#' where '#' is arguments they take in total
 # this number should be inclusive of the amount needed by nested queries
+# query arguments should be globally consistent (an argument name should be used in the same manner everywhere)
+# if you are unsure what you are doing, make argument names globally unique
+
 
 # ----------------------------------  VIEWS  -----------------------------------
 # these are subqueries that are meant to be used in other queries
@@ -31,13 +14,46 @@
 # and their content should be surrounded in parentheses to facilitate usage
 
 V_relevantEstablishments_0 = """
-SELECT * FROM establishments
-WHERE EstablishmentID is not null and RCodeDesc is not null and latitude != 0 and longitude != 0
-and RCodeDesc LIKE '%FOOD SERVICE%' and EstType LIKE 'FOOD SERVICE' and PremiseName not null
+SELECT * FROM Establishments
+WHERE EstablishmentID is not null and RCodeDesc is not null
+and latitude != 0 and longitude != 0
+and RCodeDesc LIKE '%FOOD SERVICE%'
+and EstType LIKE 'FOOD SERVICE' and PremiseName not null
+and PremiseStreet != 'MOBILE FOOD UNIT'
 """
+
 V_relevantViolations_0 = """
-SELECT
+SELECT * from Violations
+WHERE inspection_id is not null and weight is not null
+and critical_yn is not null
 """
+
+V_relevantInspections_0 = """
+SELECT * from Inspections
+WHERE inspection_id is not null and establishment_id is not null
+and inspection_date is not nulland type is not null and score is not null and type !='FOLLOWUP'
+"""
+
+V_relevantAddresses_0 = """
+SELECT * from Addresses
+WHERE HOUSENO is not null and strname is not null and ZIPCODE is not null and x is not null and y is not null
+"""
+
+# this one should probably be investigated more
+# it is cursory at best, it halfway should mimic
+# the kind of 311 complaints that chicago keeps track of
+V_relevantThreeOneOne_0 = """
+SELECT * from ThreeOneOne
+WHERE longitude is not null and latitude is not null and description is not null and requested_datetime is not null and service_name is not null
+and ( description like '%GARBAGE%' or description like '%TRASH%' or description like '%JUNK%' or description like '%CART%' or description like '%RATS%' or description like '%FOOD%')
+"""
+
+# this one should also be evaluated more as well
+V_relevantCrime_0 = """
+SELECT * from Crime
+WHERE INCIDENT_NUMBER is not null and DATE_OCCURED is not null and BLOCK_ADDRESS is not null and ZIP_CODE is not null
+"""
+
 # ---------------------------------  GETTERS  ----------------------------------
 # these are non-view queries that only read data from the DB and have no
 # permanent effect on it. They should start with 'G_'.
@@ -45,7 +61,13 @@ SELECT
 # ---------------------------------  EFFECTS  ----------------------------------
 # these queries have effects on the db. they should start with 'E_'
 
+# used for renaming the tables to something more sensible
 E_tableRename_2 = "ALTER TABLE {current_name} RENAME TO {target_name}"
+
+# used for cleaning out table rows that do not fit into our 'relevant' views
+E_removeIrrelevant_? = "DELETE from {table_name} where {key_name} is not in (SELECT {key_name} from {table_name})"
+
+
 
 def main():
     for k,v in globals().iteritems():
