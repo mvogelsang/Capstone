@@ -44,7 +44,7 @@ def main():
     x = dbCursor.fetchall()
     for i in x:
         print i
-
+    dbConn.commit()
     dbConn.close()
 
 

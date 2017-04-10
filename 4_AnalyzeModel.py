@@ -48,7 +48,7 @@ def main():
     inspectionSchedule = analyzeCurrentRestarauntModels(predictionInput, analyzer)
     outputSchedule(inspectionSchedule)
 
-
+    dbConn.commit()
     dbConn.close()
 
 if __name__ == "__main__":
