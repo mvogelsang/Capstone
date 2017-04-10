@@ -24,6 +24,7 @@ and latitude != 0 and longitude != 0
 and RCodeDesc LIKE '%FOOD SERVICE%'
 and EstType LIKE 'FOOD SERVICE' and PremiseName not null
 and PremiseStreet != 'MOBILE FOOD UNIT'
+and opening_date is not null
 """
 
 V_relevantViolations_0 = """
@@ -32,10 +33,12 @@ WHERE inspection_id is not null and weight is not null
 and critical_yn is not null
 """
 
+# should double check the type != other line
 V_relevantInspections_0 = """
 SELECT * from Inspections
 WHERE inspection_id is not null and establishment_id is not null
-and inspection_date is not null and type is not null and score is not null and type !='FOLLOWUP'
+and inspection_date is not null and type is not null and score is not null
+and type !='FOLLOWUP' and type !='OTHER'
 """
 
 V_relevantAddresses_0 = """
@@ -79,7 +82,7 @@ E_addCritical_0 = """
 UPDATE Inspections
 SET criticalViolations =
 (
-    SELECT Count(*) from (VIOLATIONS) as V
+    SELECT Count(*) from (""" + V_relevantViolations_0 + """) as V
     where Inspections.inspection_id=V.inspection_id and V.critical_yn=1
 )
 """
@@ -107,6 +110,53 @@ CREATE INDEX IF NOT EXISTS ThreeOneOne_service_request_id_index ON ThreeOneOne(s
 CREATE INDEX IF NOT EXISTS Crime_INCIDENT_NUMBER_index ON Crime(INCIDENT_NUMBER);
 """
 
+# create table meant to hold model data
+E_createModelTable_0 = """
+DROP TABLE IF EXISTS models;
+CREATE TABLE "Models" (
+	inspection_id DECIMAL,
+	establishment_id DECIMAL,
+	inspection_date TIMESTAMP,
+	scoreAverage DECIMAL,
+    powerScoreAverage DECIMAL,
+    criticalViolationAverage DECIMAL,
+    noncriticalViolationAverage DECIMAL,
+    lastScore DECIMAL,
+    lastPowerScore DECIMAL,
+    lastCriticalCount DECIMAL,
+    lastNoncriticalCount DECIMAL,
+
+    resultScore DECIMAL,
+    resultPowerScore DECIMAL,
+    resultCriticalCount DECIMAL,
+    resultNoncriticalCount DECIMAL
+);
+CREATE INDEX IF NOT EXISTS Models_inspection_id_index ON Models(inspection_id);
+CREATE INDEX IF NOT EXISTS Models_establishment_id_index ON Models(establishment_id);
+"""
+
+# fill in basic model table information
+E_startModelInfo_0 = """
+INSERT INTO Models (inspection_id, establishment_id, inspection_date, resultScore, resultCriticalCount, resultNoncriticalCount)
+SELECT i.inspection_id, i.establishment_id, i.inspection_date, i.score, i.criticalViolations, i.noncriticalViolations)
+from Inspections as i
+"""
+
+# fill in average information to the model
+E_fillInModelAverages_0 = """
+UPDATE Models
+Set scoreAverage = (select avg(i.score) from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id),
+criticalViolationAverage = (select avg(i.criticalViolations) from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id),
+noncriticalViolationAverage = (select avg(i.noncriticalViolations) from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id)
+"""
+
+# fill in most recent performance values for each model inspection
+E_fillInModelRecentValues_0 = """
+UPDATE Models
+Set lastScore = (select i.score from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id),
+lastCriticalCount = (select i.criticalViolations from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id),
+lastNoncriticalCount = (select i.noncriticalViolations from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id)
+"""
 
 def main():
     for k,v in globals().iteritems():

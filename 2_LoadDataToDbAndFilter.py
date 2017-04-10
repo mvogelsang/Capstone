@@ -37,13 +37,10 @@ def calculateViolations():
     )
 
     # add the counts for each row
-    s = time.time()
     print 'calculating noncriticalViolations'
     dbCursor.execute(sqlQueries.E_addNoncritical_0)
     print 'calculating criticalViolations'
     dbCursor.execute(sqlQueries.E_addCritical_0)
-    print time.time()-s
-    print 'seconds'
     dbConn.commit()
 
 def main():
