@@ -38,7 +38,7 @@ V_relevantInspections_0 = """
 SELECT * from Inspections
 WHERE inspection_id is not null and establishment_id is not null
 and inspection_date is not null and type is not null and score is not null
-and type !='FOLLOWUP' and type !='OTHER'
+and type !='FOLLOWUP' and type !='OTHER' and type like '%REGULAR%'
 """
 
 V_relevantAddresses_0 = """
@@ -64,6 +64,13 @@ WHERE INCIDENT_NUMBER is not null and DATE_OCCURED is not null and BLOCK_ADDRESS
 # ---------------------------------  GETTERS  ----------------------------------
 # these are non-view queries that only read data from the DB and have no
 # permanent effect on it. They should start with 'G_'.
+
+# this data will be processed, and then fed into the analyzer for training
+G_modelTrainingInput_0 = "SELECT scoreAverage, criticalViolationAverage, noncriticalViolationAverage, lastScore, lastCriticalCount, lastNoncriticalCount from Models where lastScore is not null order by inspection_id desc"
+
+# this is the corresponding output for the training input
+G_modelTrainingOutput_0 = "SELECT resultPowerScore from Models where lastScore is not null order by inspection_id desc"
+
 
 # ---------------------------------  EFFECTS  ----------------------------------
 # these queries have effects on the db. they should start with 'E_'
@@ -101,6 +108,7 @@ E_speedConfigure_0 = """
 PRAGMA synchronous = OFF;
 PRAGMA journal_mode = MEMORY;
 CREATE INDEX IF NOT EXISTS Establishments_EstablishmentID_index ON Establishments(EstablishmentID);
+CREATE INDEX IF NOT EXISTS Establishments_opening_date_index ON Establishments(opening_date);
 CREATE INDEX IF NOT EXISTS Violations_inspection_id_index ON Violations(inspection_id);
 CREATE INDEX IF NOT EXISTS Violations_ODATAID_index ON Violations(ODATAID);
 CREATE INDEX IF NOT EXISTS Inspections_inspection_id_index ON Inspections(inspection_id);
@@ -119,6 +127,7 @@ CREATE TABLE "Models" (
 	inspection_id DECIMAL,
 	establishment_id DECIMAL,
 	inspection_date TIMESTAMP,
+    age DECIMAL,
 	scoreAverage DECIMAL,
     powerScoreAverage DECIMAL,
     criticalViolationAverage DECIMAL,

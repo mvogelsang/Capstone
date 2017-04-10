@@ -10,7 +10,6 @@ import time
 dbConn = sqlite3.connect("./LouData.db", detect_types=sqlite3.PARSE_DECLTYPES);
 dbConn.row_factory = sqlite3.Row
 dbCursor = dbConn.cursor()
-dbCursor.executescript(sqlQueries.E_speedConfigure_0)
 
 def loadData(csvfile):
     subprocess.call(["csvsql", "--db", "sqlite:///./LouData.db", "--insert", "--snifflimit", "1000", csvfile])
@@ -54,6 +53,9 @@ def main():
     print 'data loaded, beginning preprocessing'
     renameTables([('Establishments_out', 'Establishments'), ('InspectionViolations_out', 'Violations'),('Health_Inspections_out', 'Inspections'),('Address_Points_out', 'Addresses'),('Citizen311data_7yrs_out', 'ThreeOneOne'),('Crime_out', 'Crime')])
 
+    # optimize db for speed
+    dbCursor.executescript(sqlQueries.E_speedConfigure_0)
+    
     # remove irrelevant rows (as deemed by relevance in the sqlQueries file)
     # although the irrelevant data should be gone, it is best to still
     # use the 'view' queries within each query as data may be added unexpectedly

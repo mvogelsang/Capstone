@@ -43,6 +43,12 @@ def main():
     print'...'
     dbConn.commit()
 
+    # # calculate restaraunt ages at time of each inspection
+    # print 'filling in power scores...'
+    # dbCursor.execute(sqlQueries.E_calculatePowerScores_0)
+    # print'...'
+    # dbConn.commit()
+
     # end of run
     print "finishing"
     dbConn.commit()
