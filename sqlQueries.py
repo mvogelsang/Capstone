@@ -14,7 +14,6 @@ tableInfo = [ ('Establishments','V_relevantEstablishments_0', 'EstablishmentID')
 # as such, they all use 'SELECT * FROM...', for compatibility
 # as a principle, all non-view queries should specify columns to be selected
 # and all view queries should select all columns.
-# only non-view queries should be used in 'execute' statements
 # they should all start with 'V_' in their name
 # and their content should be surrounded in parentheses to facilitate usage
 
@@ -71,6 +70,42 @@ E_tableRename_2 = "ALTER TABLE {current_name} RENAME TO {target_name}"
 
 # used for cleaning out table rows that do not fit into our 'relevant' views
 E_removeIrrelevant_3 = "DELETE from {table_name} where {table_name}.{key_name} not in (SELECT temp.{key_name} from ({view_query}) as temp)"
+
+# adds a column to a table
+E_addColumn_3 = "ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"
+
+# add critical violation count to the inspection table
+E_addCritical_0 = """
+UPDATE Inspections
+SET criticalViolations =
+(
+    SELECT Count(*) from (VIOLATIONS) as V
+    where Inspections.inspection_id=V.inspection_id and V.critical_yn=1
+)
+"""
+
+# add noncritical violation count to the inspection table
+E_addNoncritical_0 = """UPDATE Inspections
+SET noncriticalViolations =
+(
+    SELECT Count(*) from (""" + V_relevantViolations_0 + """) as V
+    where Inspections.inspection_id=V.inspection_id and V.critical_yn=0
+)
+"""
+
+# confiqure db for speed
+E_speedConfigure_0 = """
+PRAGMA synchronous = OFF;
+PRAGMA journal_mode = MEMORY;
+CREATE INDEX IF NOT EXISTS Establishments_EstablishmentID_index ON Establishments(EstablishmentID);
+CREATE INDEX IF NOT EXISTS Violations_inspection_id_index ON Violations(inspection_id);
+CREATE INDEX IF NOT EXISTS Violations_ODATAID_index ON Violations(ODATAID);
+CREATE INDEX IF NOT EXISTS Inspections_inspection_id_index ON Inspections(inspection_id);
+CREATE INDEX IF NOT EXISTS Inspections_establishment_id_index ON Inspections(establishment_id);
+CREATE INDEX IF NOT EXISTS Addresses_ZIPCODE_index ON Addresses(ZIPCODE);
+CREATE INDEX IF NOT EXISTS ThreeOneOne_service_request_id_index ON ThreeOneOne(service_request_id);
+CREATE INDEX IF NOT EXISTS Crime_INCIDENT_NUMBER_index ON Crime(INCIDENT_NUMBER);
+"""
 
 
 def main():

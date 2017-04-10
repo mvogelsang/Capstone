@@ -7,6 +7,7 @@ CREATE TABLE "Establishments" (
 	"RCodeDesc" VARCHAR,
 	"EstType" VARCHAR,
 	"PremiseName" VARCHAR,
+	"PremiseStreet" VARCHAR,
 	opening_date TIMESTAMP,
 	latitude DECIMAL,
 	longitude DECIMAL
@@ -50,5 +51,6 @@ CREATE TABLE "Crime" (
 	"CITY" VARCHAR,
 	"ZIP_CODE" VARCHAR
 );
+
 
 COMMIT;

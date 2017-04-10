@@ -8,6 +8,7 @@ import datetime
 dbConn = sqlite3.connect("./LouData.db", detect_types=sqlite3.PARSE_DECLTYPES);
 dbConn.row_factory = sqlite3.Row
 dbCursor = dbConn.cursor()
+dbCursor.executescript(sqlQueries.E_speedConfigure_0)
 
 def getModelTrainingInput():
     return

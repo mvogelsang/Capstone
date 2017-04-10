@@ -8,6 +8,8 @@ import datetime
 dbConn = sqlite3.connect("./LouData.db", detect_types=sqlite3.PARSE_DECLTYPES);
 dbConn.row_factory = sqlite3.Row
 dbCursor = dbConn.cursor()
+dbCursor.executescript(sqlQueries.E_speedConfigure_0)
+
 
 # get violation totals for a year span returned in a list
 # in the order [TOTAL VIOLATIONS, CRITICAL VIOLATIONS, NON-CRITICAL VIOLATIONS]
