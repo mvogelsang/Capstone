@@ -3,6 +3,11 @@
 # query arguments should be globally consistent (an argument name should be used in the same manner everywhere)
 # if you are unsure what you are doing, make argument names globally unique
 
+# this is a meta constant relevant to the sql table structure
+# it should contain the table name, the row key,
+# and the relevant view name for each table
+# should have the form '(table, view, key)'
+tableInfo = [ ('Establishments','V_relevantEstablishments_0', 'EstablishmentID'), ('Violations','V_relevantViolations_0','ODATAID'), ('Inspections','V_relevantInspections_0','inspection_id'), ('Addresses','V_relevantAddresses_0','FID'), ('ThreeOneOne','V_relevantThreeOneOne_0','service_request_id'), ('Crime','V_relevantCrime_0','INCIDENT_NUMBER') ]
 
 # ----------------------------------  VIEWS  -----------------------------------
 # these are subqueries that are meant to be used in other queries
@@ -31,7 +36,7 @@ and critical_yn is not null
 V_relevantInspections_0 = """
 SELECT * from Inspections
 WHERE inspection_id is not null and establishment_id is not null
-and inspection_date is not nulland type is not null and score is not null and type !='FOLLOWUP'
+and inspection_date is not null and type is not null and score is not null and type !='FOLLOWUP'
 """
 
 V_relevantAddresses_0 = """
@@ -65,8 +70,7 @@ WHERE INCIDENT_NUMBER is not null and DATE_OCCURED is not null and BLOCK_ADDRESS
 E_tableRename_2 = "ALTER TABLE {current_name} RENAME TO {target_name}"
 
 # used for cleaning out table rows that do not fit into our 'relevant' views
-E_removeIrrelevant_? = "DELETE from {table_name} where {key_name} is not in (SELECT {key_name} from {table_name})"
-
+E_removeIrrelevant_3 = "DELETE from {table_name} where {table_name}.{key_name} not in (SELECT temp.{key_name} from ({view_query}) as temp)"
 
 
 def main():
