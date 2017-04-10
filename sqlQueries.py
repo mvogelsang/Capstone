@@ -104,10 +104,12 @@ CREATE INDEX IF NOT EXISTS Establishments_EstablishmentID_index ON Establishment
 CREATE INDEX IF NOT EXISTS Violations_inspection_id_index ON Violations(inspection_id);
 CREATE INDEX IF NOT EXISTS Violations_ODATAID_index ON Violations(ODATAID);
 CREATE INDEX IF NOT EXISTS Inspections_inspection_id_index ON Inspections(inspection_id);
+CREATE INDEX IF NOT EXISTS Inspections_inspection_date_index ON Inspections(inspection_date);
 CREATE INDEX IF NOT EXISTS Inspections_establishment_id_index ON Inspections(establishment_id);
 CREATE INDEX IF NOT EXISTS Addresses_ZIPCODE_index ON Addresses(ZIPCODE);
 CREATE INDEX IF NOT EXISTS ThreeOneOne_service_request_id_index ON ThreeOneOne(service_request_id);
 CREATE INDEX IF NOT EXISTS Crime_INCIDENT_NUMBER_index ON Crime(INCIDENT_NUMBER);
+
 """
 
 # create table meant to hold model data
@@ -133,29 +135,41 @@ CREATE TABLE "Models" (
 );
 CREATE INDEX IF NOT EXISTS Models_inspection_id_index ON Models(inspection_id);
 CREATE INDEX IF NOT EXISTS Models_establishment_id_index ON Models(establishment_id);
+CREATE INDEX IF NOT EXISTS Models_inspection_date_index ON Models(inspection_date)
 """
 
 # fill in basic model table information
 E_startModelInfo_0 = """
 INSERT INTO Models (inspection_id, establishment_id, inspection_date, resultScore, resultCriticalCount, resultNoncriticalCount)
-SELECT i.inspection_id, i.establishment_id, i.inspection_date, i.score, i.criticalViolations, i.noncriticalViolations)
+SELECT i.inspection_id, i.establishment_id, i.inspection_date, i.score, i.criticalViolations, i.noncriticalViolations
 from Inspections as i
 """
 
 # fill in average information to the model
 E_fillInModelAverages_0 = """
 UPDATE Models
-Set scoreAverage = (select avg(i.score) from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id),
-criticalViolationAverage = (select avg(i.criticalViolations) from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id),
-noncriticalViolationAverage = (select avg(i.noncriticalViolations) from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id)
+Set scoreAverage = (select avg(i.score) from (""" + V_relevantInspections_0 + """) as i where i.inspection_date < Models.inspection_date and Models.establishment_id = i.establishment_id),
+criticalViolationAverage = (select avg(i.criticalViolations) from (""" + V_relevantInspections_0 + """) as i where i.inspection_date < Models.inspection_date and Models.establishment_id = i.establishment_id),
+noncriticalViolationAverage = (select avg(i.noncriticalViolations) from (""" + V_relevantInspections_0 + """) as i where i.inspection_date < Models.inspection_date and Models.establishment_id = i.establishment_id)
 """
 
 # fill in most recent performance values for each model inspection
 E_fillInModelRecentValues_0 = """
 UPDATE Models
-Set lastScore = (select i.score from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id),
-lastCriticalCount = (select i.criticalViolations from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id),
-lastNoncriticalCount = (select i.noncriticalViolations from (""" + V_relevantInspections_0 + """) as i where julianday(i.inspection_date) < julianday(Models.inspection_date) and Models.establishment_id = i.establishment_id)
+Set lastScore = (select i.score from (""" + V_relevantInspections_0 + """) as i where i.inspection_date < Models.inspection_date and Models.establishment_id = i.establishment_id order by i.inspection_date limit 1),
+lastCriticalCount = (select i.criticalViolations from (""" + V_relevantInspections_0 + """) as i where i.inspection_date < Models.inspection_date and Models.establishment_id = i.establishment_id order by i.inspection_date limit 1),
+lastNoncriticalCount = (select i.noncriticalViolations from (""" + V_relevantInspections_0 + """) as i where i.inspection_date < Models.inspection_date and Models.establishment_id = i.establishment_id order by i.inspection_date limit 1)
+"""
+
+# calculate the powerscore heuristics
+# this comes from the stipulation that an inspection is a failure when a score of
+# below 85 is received, or a critical violation is found
+# this essentially means that critical violations are worth at least -16 points
+E_calculatePowerScores_0 = """
+UPDATE Models
+Set powerScoreAverage = (scoreAverage - (16 * criticalViolationAverage)),
+lastPowerScore = (lastScore - (16 * lastCriticalCount)),
+resultPowerScore = (resultScore - (16 * resultCriticalCount))
 """
 
 def main():
