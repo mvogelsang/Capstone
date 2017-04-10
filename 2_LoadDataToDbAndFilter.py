@@ -25,15 +25,15 @@ def removeIrrelevant(tableInformation):
         )
 
 def main():
-    # # load the csv's to the database
-    # datafiles = ["./clean_data/Establishments_out.csv","./clean_data/InspectionViolations_out.csv","./clean_data/Health_Inspections_out.csv","./clean_data/Address_Points_out.csv", "./clean_data/Citizen311data_7yrs_out.csv", "./clean_data/Crime_out.csv"]
-    # for df in datafiles:
-    #     print "loading - " + df
-    #     loadData(df)
+    # load the csv's to the database
+    datafiles = ["./clean_data/Establishments_out.csv","./clean_data/InspectionViolations_out.csv","./clean_data/Health_Inspections_out.csv","./clean_data/Address_Points_out.csv", "./clean_data/Citizen311data_7yrs_out.csv", "./clean_data/Crime_out.csv"]
+    for df in datafiles:
+        print "loading - " + df
+        loadData(df)
 
-    # # give tables more usable names for queries
-    # print 'data loaded, beginning preprocessing'
-    # renameTables([('Establishments_out', 'Establishments'), ('InspectionViolations_out', 'Violations'),('Health_Inspections_out', 'Inspections'),('Address_Points_out', 'Addresses'),('Citizen311data_7yrs_out', 'ThreeOneOne'),('Crime_out', 'Crime')])
+    # give tables more usable names for queries
+    print 'data loaded, beginning preprocessing'
+    renameTables([('Establishments_out', 'Establishments'), ('InspectionViolations_out', 'Violations'),('Health_Inspections_out', 'Inspections'),('Address_Points_out', 'Addresses'),('Citizen311data_7yrs_out', 'ThreeOneOne'),('Crime_out', 'Crime')])
 
     # remove irrelevant rows (as deemed by relevance in the sqlQueries file)
     removeIrrelevant(sqlQueries.tableInfo)
