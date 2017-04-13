@@ -4,6 +4,16 @@ import sqlite3
 import datetime
 import sqlQueries
 
+# note the city of Louisville has a bounding box roughly described as
+# -85.9363274129697 to -85.405993517431 on longitude
+# 38.0024567750505 to 38.3772197252928 on latitude
+# note, that while longitude is 'x' and latitude is 'y'
+# coordinates are written as latitude, longitude
+# the diagonals of this box are about 38.75 miles apart
+# moving .01 in longitude constitutes moving roughly .54 mile in Louisville (.00926 for half mile)
+# moving .01 in latitude is roughly .69 miles (.00725 for half mile)
+
+
 # note, for convenience of writing many separate query functions
 # the connection is defined globally
 dbConn = sqlite3.connect("./LouData.db", detect_types=sqlite3.PARSE_DECLTYPES);
@@ -43,11 +53,7 @@ def main():
     print'...'
     dbConn.commit()
 
-    # # calculate restaraunt ages at time of each inspection
-    # print 'filling in power scores...'
-    # dbCursor.execute(sqlQueries.E_calculatePowerScores_0)
-    # print'...'
-    # dbConn.commit()
+    # need to fill in crime and 311 still
 
     # end of run
     print "finishing"

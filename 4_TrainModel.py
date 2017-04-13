@@ -7,6 +7,7 @@ from sklearn import preprocessing
 import pyglmnet
 import numpy
 import math
+import pickle
 
 # note, for convenience of writing many separate query functions
 # the connection is defined globally
@@ -17,8 +18,8 @@ dbCursor.executescript(sqlQueries.E_speedConfigure_0)
 
 def getModelTrainingInput():
     dbCursor.execute(sqlQueries.G_modelTrainingInput_0)
-    scaled = preprocessing.scale(dbCursor.fetchall())
-    return numpy.array(scaled)
+    data = dbCursor.fetchall()
+    return numpy.array(data)
 
 def getModelTrainingOutput():
     dbCursor.execute(sqlQueries.G_modelTrainingOutput_0)
@@ -28,36 +29,13 @@ def getModelTrainingOutput():
     flattened = list(sum(temp, ()))
     return numpy.array(flattened)
 
-def getAnalysisTool():
+def getAnalyzer():
     return pyglmnet.GLM(distr='gaussian', alpha=0.05, score_metric='pseudo_R2')
 
-def testAnalyzer(tInput, tOutput, analyzer):
-    print 'fitting'
-    analyzer.fit(tInput[10:8000],tOutput[10:8000])
-    print 'scoring'
-    score = analyzer.score(tInput[0:1000],tOutput[0:1000])
-    print score
-    print 'ten'
-    score = analyzer.score(tInput[0:10],tOutput[0:10])
-    print score
-    print 'prediction'
-    p = analyzer[0].predict(tInput[0:1000])
-    l = []
-    for i,d in enumerate(p):
-        l.append(abs(d - tOutput[i]))
-    print min(l)
-    print max(l)
-    print numpy.mean(l)
-    return
-
-def getPredictiveInput():
-    return
-
-def analyzeCurrentRestarauntModels(predictionInput, analyzer):
-    return
-
-def outputSchedule(inspectionSchedule):
-    return
+def getStandardScaler(trainingInput):
+    scaler = preprocessing.StandardScaler()
+    scaler.fit(trainingInput)
+    return scaler
 
 def main():
     # get the necessary components to build and use an analysis tool
@@ -67,19 +45,24 @@ def main():
     tOutput = getModelTrainingOutput()
     if len(tInput) != len(tOutput):
         print 'WARNING training input/output mismatch'
-    analyzer = getAnalysisTool()
+    print 'getting analyzer...'
+    analyzer = getAnalyzer()
+    scaler = getStandardScaler(tInput)
 
-    # test the analysis tool (not used once usefulness is confirmed)
-    # this function simply checked to see if the analyzer was
-    # reacting meaningfully to different inputs
-    testAnalyzer(tInput, tOutput, analyzer)
+    # standardize the input data
+    tInput = scaler.transform(tInput)
 
-    # get the most up-to-date information for each restaraunt
-    # predict the score of their next inspection
-    # and sort them accordingly
-    predictionInput = getPredictiveInput()
-    inspectionSchedule = analyzeCurrentRestarauntModels(predictionInput, analyzer)
-    outputSchedule(inspectionSchedule)
+    # train the model
+    print 'training model...'
+    analyzer.fit(tInput,tOutput)
+
+    # save the input scaler and the model for later use
+    print 'saving scaler and model...'
+    with open("./scaler.pickle", "wb") as output_file:
+        pickle.dump(scaler, output_file)
+    with open("./analyzer.pickle", "wb") as output_file:
+        pickle.dump(analyzer, output_file)
+
 
     dbConn.commit()
     dbConn.close()

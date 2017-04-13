@@ -1,5 +1,5 @@
 --this file is mostly for reference
-
+--it describes what is in the sqliteDB
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE "Establishments" (

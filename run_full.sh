@@ -9,3 +9,4 @@ python ./2_LoadDataToDbAndFilter.py
 sqlite3 ./LouData.db .dump > dbdump.bak
 python ./3_BuildModel.py && sqlite3 ./LouData.db .dump > dbdump.bak
 python ./4_TrainModel.py
+set +x

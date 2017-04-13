@@ -66,12 +66,18 @@ WHERE INCIDENT_NUMBER is not null and DATE_OCCURED is not null and BLOCK_ADDRESS
 # permanent effect on it. They should start with 'G_'.
 
 # this data will be processed, and then fed into the analyzer for training
-G_modelTrainingInput_0 = "SELECT scoreAverage, criticalViolationAverage, noncriticalViolationAverage, lastScore, lastCriticalCount, lastNoncriticalCount from Models where lastScore is not null order by inspection_id desc"
+G_modelTrainingInput_0 = "SELECT scoreAverage, criticalViolationAverage, noncriticalViolationAverage, lastScore, lastCriticalCount, lastNoncriticalCount from Models where scoreAverage is not null and criticalViolationAverage is not null and noncriticalViolationAverage is not null and lastScore is not null and lastCriticalCount is not null and lastNoncriticalCount is not null order by inspection_date asc, inspection_id asc"
 
 # this is the corresponding output for the training input
-G_modelTrainingOutput_0 = "SELECT resultPowerScore from Models where lastScore is not null order by inspection_id desc"
+G_modelTrainingOutput_0 = "SELECT resultPowerScore from Models where scoreAverage is not null and criticalViolationAverage is not null and noncriticalViolationAverage is not null and lastScore is not null and lastCriticalCount is not null and lastNoncriticalCount is not null order by inspection_date asc, inspection_id asc"
 
-
+# used for testing model effectiveness
+G_monthOfModels_2 = ("SELECT inspection_id, scoreAverage, criticalViolationAverage, noncriticalViolationAverage, lastScore, lastCriticalCount, lastNoncriticalCount, resultPowerScore from Models " +
+    "where inspection_date > date('now', '-{farBound} month') and inspection_date < date('now', '-{closeBound} month')" +
+    """and scoreAverage is not null and criticalViolationAverage is not null
+    and noncriticalViolationAverage is not null and lastScore is not null
+    and lastCriticalCount is not null and lastNoncriticalCount is not null
+    order by inspection_date asc""")
 # ---------------------------------  EFFECTS  ----------------------------------
 # these queries have effects on the db. they should start with 'E_'
 
