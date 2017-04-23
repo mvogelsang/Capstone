@@ -1,7 +1,7 @@
 #!/bin/bash
 sudo pip install csvkit
 sudo apt install sqlite3
-virtualenv .
+virtualenv ./venv
 . ./bin/activate
 pip install sklearn
 pip install numpy

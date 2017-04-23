@@ -5,3 +5,4 @@ dbdump.db
 dbdump.bak
 *.pyc
 bin
+venv
