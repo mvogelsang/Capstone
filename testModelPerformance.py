@@ -18,15 +18,15 @@ dbCursor.executescript(sqlQueries.E_speedConfigure_0)
 
 def main():
     # get analyzer and scaler
-    with open("./analyzer.pickle", "rb") as input_file:
+    with open("./pickles/analyzer.pickle", "rb") as input_file:
         analyzer = pickle.load(input_file)
 
-    with open("./scaler.pickle", "rb") as input_file:
+    with open("./pickles/scaler.pickle", "rb") as input_file:
         scaler = pickle.load(input_file)
 
     daysaverage = []
     for month in range(2, 5):
-        dbCursor.execute(sqlQueries.G_monthOfModels_2.format(farBound=(month+1)*12, closeBound=(month)*12))
+        dbCursor.execute(sqlQueries.G_monthOfModels_2.format(farBound=(month+1), closeBound=(month)))
         data = dbCursor.fetchall()
         ldata = []
         actualOrder = []
@@ -92,7 +92,7 @@ def main():
         print 'Average slots moved by failures: ' + str(numpy.mean(failsPredictDiff))
         print 'stddev slots moved by failures: ' + str(numpy.std(failsPredictDiff))
         print 'inspections this month: ' + str(len(predictedOrder))
-        inspectionsperday = len(predictedOrder)/365
+        inspectionsperday = len(predictedOrder)/30
         dayssooner =float(numpy.mean(failsPredictDiff))/float(inspectionsperday)
         print 'average days sooner estimate: ' + str(dayssooner)
         print '\n'

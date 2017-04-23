@@ -189,9 +189,9 @@ resultPowerScore = (resultScore - (16 * resultCriticalCount))
 
 def main():
     for k,v in globals().iteritems():
-        print k
-        print v
-        print '\n'
+        print( k)
+        print( v)
+        print( '\n')
 
 if __name__ == "__main__":
     main()
