@@ -4,3 +4,4 @@ LouData.db
 dbdump.db
 dbdump.bak
 *.pyc
+bin
