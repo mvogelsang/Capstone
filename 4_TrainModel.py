@@ -50,16 +50,16 @@ def getTestPredictions(testInput, analysisTool, predictsAnArray):
     return predictions
 
 def fitEstimator(tool, paramDict, trainingInput, trainingOutput):
-
+    totalTries= 6
     # track time taken to run search
     start = time.time()
-    # newTool = model_selection.GridSearchCV(estimator=tool, param_grid=paramDict, n_jobs=2, pre_dispatch=4, cv=10, refit=True)
-    newTool = model_selection.RandomizedSearchCV(estimator=tool, param_distributions=paramDict, refit=True, n_iter=2, verbose=1)
+    newTool = model_selection.RandomizedSearchCV(estimator=tool, param_distributions=paramDict, cv=3, refit=True, n_iter=totalTries, n_jobs=4, verbose=0)
     newTool.fit(trainingInput, trainingOutput)
     end = time.time()
-    print '\t HyperParameter Search done in ' + str(end-start) + 'seconds'
-    print 'best params...'
-    print newTool.best_params_
+    delta = end-start
+    print '\t HyperParameter Search done in ' + str(delta) + 'seconds'
+    print '\t ' + str(float(delta)/float(totalTries)) + ' seconds per parameter combination'
+    print '\t best params - ' + str(newTool.best_params_)
     return newTool.best_estimator_
 
 def main():
@@ -76,15 +76,15 @@ def main():
     print( 'scaling...')
     scaler = getStandardScaler(tInput)
     tInput = scaler.transform(tInput)
-    tInput = tInput[-1000:-1]
-    tOutput = tOutput[-1000:-1]
+    tInputSmall = tInput[-2000:-1]
+    tOutputSmall = tOutput[-2000:-1]
 
     # get a test input and output set
     print( 'creating data subsets..')
-    prelimInput = tInput[0:-500]
-    prelimOutput = tOutput[0:-500]
-    testInput = tInput[-500: -1]
-    testOutput = tOutput[-500: -1]
+    prelimInput = tInputSmall[-1000:-500]
+    prelimOutput = tOutputSmall[-1000:-500]
+    testInput = tInputSmall[-500: -1]
+    testOutput = tOutputSmall[-500: -1]
 
     # get and pre-train each tool
     print( 'getting tools...')
@@ -98,14 +98,16 @@ def main():
 
 
     # get initial measure of performance
-    print( 'R^2 Scores')
-    print( 'glmnet - ' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, glmnet, True) )))
-    print( 'ardRegressor - ' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, ardRegressor, False))))
+    print( '\nR^2 Scores')
+    print( 'glmnet\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, glmnet, True) )))
+    print( 'ardRegressor\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, ardRegressor, False))))
+    print ''
 
-    # # refit all tools with the full data
-    # print 'refitting...'
-    # glmnet.fit(tInput, tOutput)
-    # ardRegressor.fit(tInput, tOutput)
+    # refit all tools with the full data
+    print 'refitting glm...'
+    glmnet.fit(tInput, tOutput)
+    print 'refitting ard...'
+    ardRegressor.fit(tInputSmall, tOutputSmall)
 
 
     # # save the input scaler and the model for later use
