@@ -7,3 +7,4 @@ dbdump.bak
 bin
 venv
 bimonthlyCharts
+*.pdf

@@ -12,6 +12,8 @@ import pickle
 from functools import partial
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from fpdf import FPDF
+from localUtil import getPrediction, scaler
 
 # note, for convenience of writing many separate query functions
 # the connection is defined globally
@@ -19,6 +21,24 @@ dbConn = sqlite3.connect("./LouData.db", detect_types=sqlite3.PARSE_DECLTYPES);
 # dbConn.row_factory = sqlite3.Row
 dbCursor = dbConn.cursor()
 dbCursor.executescript(sqlQueries.E_speedConfigure_0)
+
+def generatePDF():
+    pdf = FPDF()
+    pdf.set_margins(25.4, 25.4, 25.4)
+    pdf.add_page()
+    pdf.set_font('Arial', 'B', 20)
+    pdf.cell(0,10,'City of Louisville Advanced Data Analytics',0,1,align='C')
+    pdf.cell(0,10,'Predictive Health Inspections Report',0,1, align='C')
+    pdf.set_font('Arial', 'B', 16)
+    pdf.add_page()
+    pdf.add_page()
+    pdf.set_y(279/2-16/2)
+    pdf.cell(0,16,'Bi-Monthly Analytics Evaluation Performance Charts',0,1, align='C')
+    for img in os.listdir('./bimonthlyCharts'):
+        pdf.ln()
+        pdf.set_x(215.9/2-25.4*8/2)
+        pdf.image(name='./bimonthlyCharts/'+img, type='png', w=25.4*8)
+    pdf.output('InspectionStatisticsReport.pdf', 'F')
 
 def scatter_plot_with_correlation_line(x, y, color):
     #  adjusted from
@@ -79,14 +99,6 @@ def savePerformanceGraph(inspectionInfo, startDate, endDate):
     # Save figure
     plt.savefig('./bimonthlyCharts/'+startDate+'_to_'+endDate+'_performance_assessment.png', dpi=300, format='png')
 
-def getAggregatePrediction(arrGenerators, scalarGenerators, inputDataPoint):
-    allPredictions = []
-    for arrGen in arrGenerators:
-        allPredictions.append(numpy.mean(arrGen.predict(inputDataPoint)))
-    for scaleGen in scalarGenerators:
-        allPredictions.append(scaleGen.predict(inputDataPoint))
-
-    return numpy.mean(allPredictions)
 
 def getPeriodBounds(inspectionIds):
     dbCursor.execute(sqlQueries.G_modelPeriodBounds_1.format(rangeIds=str(tuple(inspectionIds))))
@@ -96,18 +108,10 @@ def getPeriodBounds(inspectionIds):
 
     return start, end
 
-def main():
-    # get analyzers and scaler
-    with open("./pickles/scaler.pickle", "rb") as input_file:
-        scaler = pickle.load(input_file)
-    with open("./pickles/glmnet.pickle", "rb") as input_file:
-        glmnet = pickle.load(input_file)
-    with open("./pickles/ardRegressor.pickle", "rb") as input_file:
-        ardRegressor = pickle.load(input_file)
-    with open("./pickles/svrRegressor.pickle", "rb") as input_file:
-        svrRegressor = pickle.load(input_file)
 
-    getPrediction = partial(getAggregatePrediction, [glmnet], [ardRegressor, svrRegressor])
+
+def main():
+
 
     daysaverage = []
     for month in range(2, 24):
@@ -198,7 +202,7 @@ def main():
 
 
     print 'average days sooner for test: ' + str(numpy.mean(daysaverage))
-
+    generatePDF()
 
 
 
