@@ -5,7 +5,7 @@ import datetime
 import sqlQueries
 import time
 import sklearn
-from sklearn import preprocessing, metrics, model_selection, linear_model
+from sklearn import preprocessing, metrics, model_selection, linear_model, svm
 import pyglmnet
 import numpy
 import math
@@ -49,8 +49,7 @@ def getTestPredictions(testInput, analysisTool, predictsAnArray):
 
     return predictions
 
-def fitEstimator(tool, paramDict, trainingInput, trainingOutput):
-    totalTries= 6
+def fitEstimator(tool, paramDict, trainingInput, trainingOutput, totalTries=5):
     # track time taken to run search
     start = time.time()
     newTool = model_selection.RandomizedSearchCV(estimator=tool, param_distributions=paramDict, cv=3, refit=True, n_iter=totalTries, n_jobs=4, verbose=0)
@@ -76,15 +75,15 @@ def main():
     print( 'scaling...')
     scaler = getStandardScaler(tInput)
     tInput = scaler.transform(tInput)
-    tInputSmall = tInput[-2000:-1]
-    tOutputSmall = tOutput[-2000:-1]
+    tInputSmall = tInput[-10000:]
+    tOutputSmall = tOutput[-10000:]
 
     # get a test input and output set
     print( 'creating data subsets..')
     prelimInput = tInputSmall[-1000:-500]
     prelimOutput = tOutputSmall[-1000:-500]
-    testInput = tInputSmall[-500: -1]
-    testOutput = tOutputSmall[-500: -1]
+    testInput = tInputSmall[-500:]
+    testOutput = tOutputSmall[-500:]
 
     # get and pre-train each tool
     print( 'getting tools...')
@@ -92,31 +91,42 @@ def main():
     glmnet = getglmnet()
     glmnet.fit(prelimInput,prelimOutput)
 
+
+    print '\tsvr...'
+    svrRegressorDict = {'C': numpy.arange(.1,10,.1), }
+    svrRegressor = fitEstimator( svm.LinearSVR(), svrRegressorDict, prelimInput, prelimOutput, 75)
+
     print '\tard...'
     ardRegressorDict = {'alpha_1': numpy.arange(1.e-6, 1.e-5, 1.e-6), 'alpha_2': numpy.arange(1.e-6, 1.e-5, 1.e-6)}
-    ardRegressor = fitEstimator(linear_model.ARDRegression(), ardRegressorDict, prelimInput, prelimOutput)
+    ardRegressor = fitEstimator(linear_model.ARDRegression(), ardRegressorDict, prelimInput, prelimOutput, 5)
 
 
     # get initial measure of performance
     print( '\nR^2 Scores')
-    print( 'glmnet\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, glmnet, True) )))
+    print( 'glmnet\t\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, glmnet, True))))
     print( 'ardRegressor\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, ardRegressor, False))))
+    print( 'svrRegressor\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, svrRegressor, False))))
     print ''
 
     # refit all tools with the full data
     print 'refitting glm...'
     glmnet.fit(tInput, tOutput)
+    print 'refitting svr...'
+    svrRegressor.fit(tInput, tOutput)
     print 'refitting ard...'
-    ardRegressor.fit(tInputSmall, tOutputSmall)
+    ardRegressor.fit(tInputSmall[-1500:], tOutputSmall[-1500:])
 
 
-    # # save the input scaler and the model for later use
-    # print( 'saving scaler and model...')
-    # with open("./pickles/scaler.pickle", "wb") as output_file:
-    #     pickle.dump(scaler, output_file)
-    # with open("./pickles/glmnet.pickle", "wb") as output_file:
-    #     pickle.dump(glmnet, output_file)
-
+    # save the input scaler and the model for later use
+    print( 'saving scaler and tools...')
+    with open("./pickles/scaler.pickle", "wb") as output_file:
+        pickle.dump(scaler, output_file)
+    with open("./pickles/glmnet.pickle", "wb") as output_file:
+        pickle.dump(glmnet, output_file)
+    with open("./pickles/ardRegressor.pickle", "wb") as output_file:
+        pickle.dump(ardRegressor, output_file)
+    with open("./pickles/svrRegressor.pickle", "wb") as output_file:
+        pickle.dump(svrRegressor, output_file)
 
     dbConn.commit()
     dbConn.close()
