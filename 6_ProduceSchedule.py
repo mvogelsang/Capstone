@@ -50,6 +50,14 @@ def main():
     for datapoint in data:
         dbCursor.execute(sqlQueries.E_updatePredictedScore_2.format(est_id=datapoint[0], score_prediction=getPrediction(scaler.transform(list(datapoint[1:])))))
 
+    # fill in explicit ranking by score
+    dbCursor.execute(sqlQueries.G_establishmentsByPredictedScore_0)
+    data = dbCursor.fetchall()
+    i=0
+    while i < len(data):
+        establishment_id=data[i][0]
+        dbCursor.execute(sqlQueries.E_fillInRank_2.format(est_id=establishment_id, ranking=i+1))
+        i = i + 1
 
     # end of run
     print "finishing"

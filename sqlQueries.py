@@ -91,6 +91,13 @@ SELECT min(inspection_date), max(inspection_date) from models
 WHERE inspection_id in {rangeIds}
 """
 
+# get ids by predicted score
+G_establishmentsByPredictedScore_0 = """
+SELECT establishment_id
+from output
+order by predictedPowerScore asc
+"""
+
 # ---------------------------------  EFFECTS  ----------------------------------
 # these queries have effects on the db. they should start with 'E_'
 
@@ -263,6 +270,11 @@ Set predictedPowerScore = {score_prediction}
 Where establishment_id = {est_id}
 """
 
+E_fillInRank_2 = """
+UPDATE Output
+Set priorityRanking = {ranking}
+Where establishment_id = {est_id}
+"""
 def main():
     for k,v in globals().iteritems():
         print( k)
