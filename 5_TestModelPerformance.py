@@ -38,7 +38,7 @@ def generatePDF():
         pdf.ln()
         pdf.set_x(215.9/2-25.4*8/2)
         pdf.image(name='./bimonthlyCharts/'+img, type='png', w=25.4*8)
-    pdf.output('InspectionStatisticsReport.pdf', 'F')
+    pdf.output('./output/InspectionStatisticsReport.pdf', 'F')
 
 def scatter_plot_with_correlation_line(x, y, color):
     #  adjusted from

@@ -10,13 +10,16 @@ import numpy
 import math
 import pickle
 from functools import partial
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def getAggregatePrediction(arrGenerators, scalarGenerators, inputDataPoint):
     allPredictions = []
     for arrGen in arrGenerators:
         allPredictions.append(numpy.mean(arrGen.predict(inputDataPoint)))
     for scaleGen in scalarGenerators:
-        allPredictions.append(scaleGen.predict(inputDataPoint))
+        temp = numpy.array([inputDataPoint])
+        allPredictions.append(scaleGen.predict(temp))
 
     return numpy.mean(allPredictions)
 

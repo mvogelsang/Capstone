@@ -79,6 +79,12 @@ G_monthOfModels_2 = ("SELECT inspection_id, scoreAverage, criticalViolationAvera
     and lastCriticalCount is not null and lastNoncriticalCount is not null
     order by inspection_date asc""")
 
+# get data to be predicted on for the final output
+G_outputDatapoints_0 = ("""
+    SELECT establishment_id, scoreAverage, criticalViolationAverage, noncriticalViolationAverage, lastScore, lastCriticalCount, lastNoncriticalCount
+    from output
+""")
+
 # used to get the start and end of a testing period
 G_modelPeriodBounds_1 = """
 SELECT min(inspection_date), max(inspection_date) from models
@@ -160,11 +166,46 @@ CREATE INDEX IF NOT EXISTS Models_establishment_id_index ON Models(establishment
 CREATE INDEX IF NOT EXISTS Models_inspection_date_index ON Models(inspection_date)
 """
 
+# create table meant to hold output data
+E_createOutputTable_0 = """
+DROP TABLE IF EXISTS Output;
+CREATE TABLE "Output" (
+	establishment_id DECIMAL,
+    age DECIMAL,
+	scoreAverage DECIMAL,
+    powerScoreAverage DECIMAL,
+    criticalViolationAverage DECIMAL,
+    noncriticalViolationAverage DECIMAL,
+    lastScore DECIMAL,
+    lastPowerScore DECIMAL,
+    lastCriticalCount DECIMAL,
+    lastNoncriticalCount DECIMAL,
+
+    resultScore DECIMAL,
+    resultPowerScore DECIMAL,
+    resultCriticalCount DECIMAL,
+    resultNoncriticalCount DECIMAL,
+
+    predictedPowerScore,
+    priorityRanking DECIMAL
+);
+CREATE INDEX IF NOT EXISTS Output_establishment_id_index ON Output(establishment_id);
+"""
+
 # fill in basic model table information
 E_startModelInfo_0 = """
 INSERT INTO Models (inspection_id, establishment_id, inspection_date, resultScore, resultCriticalCount, resultNoncriticalCount)
 SELECT i.inspection_id, i.establishment_id, i.inspection_date, i.score, i.criticalViolations, i.noncriticalViolations
 from Inspections as i
+"""
+
+# fill in unique restaurantIDs from the last 2 years
+E_fillOutputIds_0 = """
+INSERT INTO output (establishment_id)
+SELECT DISTINCT i.establishment_id as estid
+FROM Inspections AS i
+WHERE i.inspection_date > date('now', '-2 years')
+
 """
 
 # fill in average information to the model
@@ -175,6 +216,14 @@ criticalViolationAverage = (select avg(i.criticalViolations) from (""" + V_relev
 noncriticalViolationAverage = (select avg(i.noncriticalViolations) from (""" + V_relevantInspections_0 + """) as i where i.inspection_date < Models.inspection_date and Models.establishment_id = i.establishment_id)
 """
 
+# fill in average information to the output
+E_fillInOutputAverages_0 = """
+UPDATE Output
+Set scoreAverage = (select avg(i.score) from Inspections as i where i.inspection_date < date('now') and Output.establishment_id = i.establishment_id),
+criticalViolationAverage = (select avg(i.criticalViolations) from Inspections as i where i.inspection_date < date('now') and Output.establishment_id = i.establishment_id),
+noncriticalViolationAverage = (select avg(i.noncriticalViolations) from Inspections as i where i.inspection_date < date('now') and Output.establishment_id = i.establishment_id)
+"""
+
 # fill in most recent performance values for each model inspection
 E_fillInModelRecentValues_0 = """
 UPDATE Models
@@ -183,6 +232,13 @@ lastCriticalCount = (select i.criticalViolations from (""" + V_relevantInspectio
 lastNoncriticalCount = (select i.noncriticalViolations from (""" + V_relevantInspections_0 + """) as i where i.inspection_date < Models.inspection_date and Models.establishment_id = i.establishment_id order by i.inspection_date limit 1)
 """
 
+# fill in most recent performance values to the output
+E_fillInOutputRecentValues_0 = """
+UPDATE Output
+Set lastScore = (select i.score from Inspections as i where i.inspection_date < date('now') and Output.establishment_id = i.establishment_id order by i.inspection_date limit 1),
+lastCriticalCount = (select i.criticalViolations from Inspections as i where i.inspection_date < date('now') and Output.establishment_id = i.establishment_id order by i.inspection_date limit 1),
+lastNoncriticalCount = (select i.noncriticalViolations from Inspections as i where i.inspection_date < date('now') and Output.establishment_id = i.establishment_id order by i.inspection_date limit 1)
+"""
 # calculate the powerscore heuristics
 # this comes from the stipulation that an inspection is a failure when a score of
 # below 85 is received, or a critical violation is found
@@ -192,6 +248,19 @@ UPDATE Models
 Set powerScoreAverage = (scoreAverage - (16 * criticalViolationAverage)),
 lastPowerScore = (lastScore - (16 * lastCriticalCount)),
 resultPowerScore = (resultScore - (16 * resultCriticalCount))
+"""
+
+E_calculateOutputPowerScores_0 = """
+UPDATE Output
+Set powerScoreAverage = (scoreAverage - (16 * criticalViolationAverage)),
+lastPowerScore = (lastScore - (16 * lastCriticalCount)),
+resultPowerScore = (resultScore - (16 * resultCriticalCount))
+"""
+
+E_updatePredictedScore_2 = """
+UPDATE Output
+Set predictedPowerScore = {score_prediction}
+Where establishment_id = {est_id}
 """
 
 def main():
