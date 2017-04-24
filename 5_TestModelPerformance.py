@@ -11,6 +11,7 @@ import math
 import pickle
 from functools import partial
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 # note, for convenience of writing many separate query functions
 # the connection is defined globally
@@ -34,7 +35,7 @@ def scatter_plot_with_correlation_line(x, y, color):
     plt.plot(X_plot, m*X_plot + b, color+'-')
 
 
-def savePerformanceGraph(inspectionInfo):
+def savePerformanceGraph(inspectionInfo, startDate, endDate):
 
     # orderGenerator.sort(None, lambda x: x[1], False)
     # inspection info list elements should have the form below
@@ -45,31 +46,38 @@ def savePerformanceGraph(inspectionInfo):
     actualx = []
     predictedx = []
     optimalx = []
-    scores = []
+    powerScores = []
     for inspection in inspectionInfo:
-        scores.append(inspection[-2])
+        powerScores.append(inspection[-2])
         actualx.append(inspection[1])
         predictedx.append(inspection[-1])
         optimalx.append(inspection[2])
 
 
     # generate best fit lines
-    actualm, actualb = numpy.polyfit(actualx, scores, 1)
-    predictedm, predictedb = numpy.polyfit(predictedx, scores, 1)
-    optimalm, optimalb = numpy.polyfit(optimalx, scores, 1)
+    actualm, actualb = numpy.polyfit(actualx, powerScores, 1)
+    predictedm, predictedb = numpy.polyfit(predictedx, powerScores, 1)
+    optimalm, optimalb = numpy.polyfit(optimalx, powerScores, 1)
 
     # draw and save the plot
     plt.clf()
     fig = plt.gcf()
     fig.set_size_inches(8.5, 11, forward=True)
+    plt.xlabel('Inspection Precedence')
+    plt.ylabel('Power Score')
+    plt.title('Model Performance for Period ' + startDate + ' - ' + endDate)
+    redPatch = mpatches.Patch(color='red', label='Actual Schedule')
+    bluePatch = mpatches.Patch(color='blue', label='Predictive Analytics Schedule')
+    greenPatch = mpatches.Patch(color='green', label='Optimal Schedule')
+    plt.legend(handles=[redPatch, bluePatch, greenPatch])
 
-    scatter_plot_with_correlation_line(actualx, scores, 'r')
-    scatter_plot_with_correlation_line(predictedx, scores, 'b')
-    scatter_plot_with_correlation_line(optimalx, scores, 'g')
+    scatter_plot_with_correlation_line(actualx, powerScores, 'r')
+    scatter_plot_with_correlation_line(predictedx, powerScores, 'b')
+    scatter_plot_with_correlation_line(optimalx, powerScores, 'g')
     # plt.show()
 
     # Save figure
-    # plt.savefig(graph_filepath, dpi=300, format='png')
+    plt.savefig('./bimonthlyCharts/'+startDate+'_to_'+endDate+'_performance_assessment.png', dpi=300, format='png')
 
 def getAggregatePrediction(arrGenerators, scalarGenerators, inputDataPoint):
     allPredictions = []
@@ -102,7 +110,7 @@ def main():
     getPrediction = partial(getAggregatePrediction, [glmnet], [ardRegressor, svrRegressor])
 
     daysaverage = []
-    for month in range(2, 15):
+    for month in range(2, 24):
         # get the raw data from the models
         dbCursor.execute(sqlQueries.G_monthOfModels_2.format(farBound=(month+2), closeBound=(month)))
         data = dbCursor.fetchall()
@@ -145,12 +153,12 @@ def main():
             i = i + 1
             index = optimalOrder.index(inspection)
             dayDiffItem.append(index)
-            score = orderGenerator[index][-1]
-            if(score < 85):
+            powerscore = orderGenerator[index][-1]
+            if(powerscore < 85):
                 dayDiffItem.append(True)
             else:
                 dayDiffItem.append(False)
-            dayDiffItem.append(score)
+            dayDiffItem.append(powerscore)
 
             dayDiffs.append(dayDiffItem)
 
@@ -186,8 +194,7 @@ def main():
         print '\n'
         daysaverage.append(dayssooner)
 
-        savePerformanceGraph(dayDiffs)
-        # break
+        savePerformanceGraph(dayDiffs, periodStart, periodEnd)
 
 
     print 'average days sooner for test: ' + str(numpy.mean(daysaverage))

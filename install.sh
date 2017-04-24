@@ -8,3 +8,4 @@ pip install numpy
 pip install scipy
 pip install pandas
 pip install pyglmnet
+pip install fpdf

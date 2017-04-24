@@ -10,6 +10,8 @@ import pyglmnet
 import numpy
 import math
 import pickle
+from fpdf import FPDF
+
 
 # note, for convenience of writing many separate query functions
 # the connection is defined globally
