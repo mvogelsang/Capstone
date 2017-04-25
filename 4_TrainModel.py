@@ -1,3 +1,4 @@
+from scipy import stats
 import subprocess
 import os
 import sqlite3
@@ -5,12 +6,14 @@ import datetime
 import sqlQueries
 import time
 import sklearn
-from sklearn import preprocessing, metrics, model_selection, linear_model, svm
+from sklearn import preprocessing, metrics, model_selection, linear_model, svm, neural_network
 import pyglmnet
 import numpy
 import math
 import pickle
 from fpdf import FPDF
+import warnings
+warnings.filterwarnings('ignore')
 
 
 # note, for convenience of writing many separate query functions
@@ -100,20 +103,18 @@ def main():
 
     print '\tard...'
     ardRegressorDict = {'alpha_1': numpy.arange(1.e-6, 1.e-5, 1.e-6), 'alpha_2': numpy.arange(1.e-6, 1.e-5, 1.e-6)}
-    ardRegressor = fitEstimator(linear_model.ARDRegression(), ardRegressorDict, prelimInput, prelimOutput, 5)
+    ardRegressor = fitEstimator(linear_model.ARDRegression(), ardRegressorDict, prelimInput, prelimOutput, 10)
 
-    print '\tgaussianProcess...'
-    gaussianDict = {}
-    gaussianProcess = sklearn.gaussian_process.GaussianProcessRegressor()
-    gaussianProcess.fit(tInput[0:-500], tOutput[0:-500])
-
+    print '\tmlp...'
+    mlpRegressorDict = {'hidden_layer_sizes':[(1),(2),(3),(len(prelimInput[0])/2)], 'learning_rate': ['constant', 'invscaling', 'adaptive'], 'solver': ['lbfgs', 'sgd', 'adam'], 'activation': ['identity', 'relu']}
+    mlpRegressor = fitEstimator(neural_network.MLPRegressor(), mlpRegressorDict, tInputSmall, tOutputSmall,60)
 
     # get initial measure of performance
     print( '\nR^2 Scores')
     print( 'glmnet\t\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, glmnet, True))))
     print( 'ardRegressor\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, ardRegressor, False))))
     print( 'svrRegressor\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, svrRegressor, False))))
-    print( 'gaussianProcess\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, gaussianProcess, False))))
+    print( 'mlp\t\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, mlpRegressor, False))))
     print ''
 
     # refit all tools with the full data
@@ -123,6 +124,8 @@ def main():
     svrRegressor.fit(tInput, tOutput)
     print 'refitting ard...'
     ardRegressor.fit(tInputSmall[-1500:], tOutputSmall[-1500:])
+    print 'refitting mlpRegressor...'
+    mlpRegressor.fit(tInput, tOutput)
 
 
     # save the input scaler and the model for later use
@@ -131,9 +134,11 @@ def main():
         pickle.dump(scaler, output_file)
     with open("./pickles/glmnet.pickle", "wb") as output_file:
         pickle.dump(glmnet, output_file)
+    with open("./pickles/svrRegressor.pickle", "wb") as output_file:
+        pickle.dump(svrRegressor, output_file)
     with open("./pickles/ardRegressor.pickle", "wb") as output_file:
         pickle.dump(ardRegressor, output_file)
-    with open("./pickles/svrRegressor.pickle", "wb") as output_file:
+    with open("./pickles/mlpRegressor.pickle", "wb") as output_file:
         pickle.dump(svrRegressor, output_file)
 
     dbConn.commit()

@@ -25,7 +25,6 @@ def main():
     verboseJSON = []
 
     print 'building output...'
-    print len(data)
     # fill the containers
     for datapoint in data:
         appender = {}

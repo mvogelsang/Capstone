@@ -32,5 +32,7 @@ with open("./pickles/ardRegressor.pickle", "rb") as input_file:
     ardRegressor = pickle.load(input_file)
 with open("./pickles/svrRegressor.pickle", "rb") as input_file:
     svrRegressor = pickle.load(input_file)
+with open("./pickles/mlpRegressor.pickle", "rb") as input_file:
+    mlpRegressor = pickle.load(input_file)
 
-getPrediction = partial(getAggregatePrediction, [glmnet], [ardRegressor, svrRegressor])
+getPrediction = partial(getAggregatePrediction, [glmnet], [ardRegressor, svrRegressor, mlpRegressor])
