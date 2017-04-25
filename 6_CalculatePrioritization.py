@@ -57,7 +57,7 @@ def main():
     while i < len(data):
         establishment_id=data[i][0]
         dbCursor.execute(sqlQueries.E_fillInRank_2.format(est_id=establishment_id, ranking=i+1))
-        i = i + 1
+        i += 1
 
     # end of run
     print "finishing"

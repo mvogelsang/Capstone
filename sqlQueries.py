@@ -98,6 +98,12 @@ from output
 order by predictedPowerScore asc
 """
 
+G_finalOutput_0 = """
+SELECT E.establishmentId as establishment_id, E.PremiseName as Name, E.PremiseStreet as Street, O.predictedPowerScore as PredictedPowerScore, O.priorityRanking as Priority
+FROM Establishments as E, Output as O
+WHERE E.EstablishmentID = O.establishment_id
+ORDER BY O.priorityRanking ASC
+"""
 # ---------------------------------  EFFECTS  ----------------------------------
 # these queries have effects on the db. they should start with 'E_'
 
@@ -207,11 +213,13 @@ from Inspections as i
 """
 
 # fill in unique restaurantIDs from the last 2 years
+# that are still in the establishment table
 E_fillOutputIds_0 = """
 INSERT INTO output (establishment_id)
 SELECT DISTINCT i.establishment_id as estid
 FROM Inspections AS i
 WHERE i.inspection_date > date('now', '-2 years')
+AND i.establishment_id in (select EstablishmentID from establishments)
 
 """
 
