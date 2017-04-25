@@ -102,12 +102,18 @@ def main():
     ardRegressorDict = {'alpha_1': numpy.arange(1.e-6, 1.e-5, 1.e-6), 'alpha_2': numpy.arange(1.e-6, 1.e-5, 1.e-6)}
     ardRegressor = fitEstimator(linear_model.ARDRegression(), ardRegressorDict, prelimInput, prelimOutput, 5)
 
+    print '\tgaussianProcess...'
+    gaussianDict = {}
+    gaussianProcess = sklearn.gaussian_process.GaussianProcessRegressor()
+    gaussianProcess.fit(tInput[0:-500], tOutput[0:-500])
+
 
     # get initial measure of performance
     print( '\nR^2 Scores')
     print( 'glmnet\t\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, glmnet, True))))
     print( 'ardRegressor\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, ardRegressor, False))))
     print( 'svrRegressor\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, svrRegressor, False))))
+    print( 'gaussianProcess\t\t' + str(metrics.r2_score(y_true=testOutput,y_pred=getTestPredictions(testInput, gaussianProcess, False))))
     print ''
 
     # refit all tools with the full data

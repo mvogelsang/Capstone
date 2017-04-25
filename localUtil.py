@@ -18,8 +18,8 @@ def getAggregatePrediction(arrGenerators, scalarGenerators, inputDataPoint):
     for arrGen in arrGenerators:
         allPredictions.append(numpy.mean(arrGen.predict(inputDataPoint)))
     for scaleGen in scalarGenerators:
-        temp = numpy.array([inputDataPoint])
-        allPredictions.append(scaleGen.predict(temp))
+        temp = numpy.array([inputDataPoint,inputDataPoint])
+        allPredictions.append(scaleGen.predict(temp)[0])
 
     return numpy.mean(allPredictions)
 

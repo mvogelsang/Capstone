@@ -10,9 +10,10 @@ import time
 dbConn = sqlite3.connect("./LouData.db", detect_types=sqlite3.PARSE_DECLTYPES);
 dbConn.row_factory = sqlite3.Row
 dbCursor = dbConn.cursor()
+dbCursor.executescript(sqlQueries.E_speedConfigure_0)
 
 def loadData(csvfile):
-    subprocess.call(["csvsql", "--db", "sqlite:///./LouData.db", "--insert", "--snifflimit", "1000", csvfile])
+    subprocess.call(["csvsql", "--db", "sqlite:///./LouData.db", "--insert", "--snifflimit", "1000", csvfile], stdout=open(os.devnull, 'wb'), stderr = open(os.devnull, 'wb'))
 
 def renameTables(renameArr):
     for tup in renameArr:
@@ -44,10 +45,10 @@ def calculateViolations():
 
 def main():
     # load the csv's to the database
-    datafiles = ["./clean_data/Establishments_out.csv","./clean_data/InspectionViolations_out.csv","./clean_data/Health_Inspections_out.csv","./clean_data/Address_Points_out.csv", "./clean_data/Citizen311data_7yrs_out.csv", "./clean_data/Crime_out.csv"]
+    datafiles = os.listdir('./clean_data')
     for df in datafiles:
         print "loading - " + df
-        loadData(df)
+        loadData('./clean_data/'+df)
 
     # give tables more usable names for queries
     print 'data loaded, beginning preprocessing'
@@ -55,7 +56,7 @@ def main():
 
     # optimize db for speed
     dbCursor.executescript(sqlQueries.E_speedConfigure_0)
-    
+
     # remove irrelevant rows (as deemed by relevance in the sqlQueries file)
     # although the irrelevant data should be gone, it is best to still
     # use the 'view' queries within each query as data may be added unexpectedly

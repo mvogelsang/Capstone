@@ -136,7 +136,7 @@ def main():
         # generate a list tuples of the form (inspection_id, predictedScore, actual score)
         orderGenerator = []
         for n in ldata:
-            logit = numpy.array([n[1:-1]])
+            logit = numpy.array(n[1:-1])
             logit = scaler.transform(logit)
             pred = getPrediction(logit)
             # pred = numpy.mean(glmnet.predict(logit))
@@ -202,6 +202,7 @@ def main():
 
 
     print 'average days sooner for test: ' + str(numpy.mean(daysaverage))
+    print 'generating pdf report'
     generatePDF()
 
 

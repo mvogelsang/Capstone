@@ -34,11 +34,13 @@ and critical_yn is not null
 """
 
 # should double check the type != other line
+# THIS ONE IS DEPENDENT ON ESTABLISHMENTS BEING CLEAN
 V_relevantInspections_0 = """
 SELECT * from Inspections
 WHERE inspection_id is not null and establishment_id is not null
 and inspection_date is not null and type is not null and score is not null
 and type !='FOLLOWUP' and type !='OTHER' and type like '%REGULAR%'
+and establishment_id in (select EstablishmentID from Establishments)
 """
 
 V_relevantAddresses_0 = """
